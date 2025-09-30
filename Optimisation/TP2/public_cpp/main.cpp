@@ -167,7 +167,7 @@ public:
         return solution;
     }
 
-    std::vector<Point<Number>> manyRuns(int angles = 16)
+    std::vector<Point<Number>> manyRuns(int angles = 8)
     {
         std::vector<Point<Number>> bestSolution;
         std::cout << "Found " << angles

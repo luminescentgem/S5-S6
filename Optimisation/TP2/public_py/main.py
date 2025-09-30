@@ -89,7 +89,7 @@ def writeSolutionSVG(fn, points, sol, input_radius, image_size=1000):
 
     fsvg.write("</svg>\n")
 
-def manyRuns(points, radius, angles=16):
+def manyRuns(points, radius, angles=8):
   """Runs greedy angles times with different directions
      Returns the best solution found"""
   bestSol = []
