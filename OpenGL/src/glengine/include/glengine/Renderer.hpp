@@ -16,9 +16,6 @@ private:
     unsigned vbo_ = 0;
     unsigned ebo_ = 0;
 
-    unsigned vaoN = 0;
-    unsigned vboN = 0;
-
     unsigned mainProgram_ = 0;
     unsigned lineProgram_ = 0;
 
@@ -35,8 +32,6 @@ private:
 
     enum class MousePressedButton { NONE, LEFT, RIGHT, MIDDLE };
     MousePressedButton mouseButtonState = MousePressedButton::NONE;
-
-    std::vector<float> normalLines;
 
     GLEngine::OrbitalCamera camera_ = {glm::vec3(0.3f, 0.4f, 3.0f),
                                           glm::vec3(0.0, 0.0, 0.0),

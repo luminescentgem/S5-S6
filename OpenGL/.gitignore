@@ -3,3 +3,4 @@ src/glfw*
 src/glm*
 src/imgui*
 src/stbimage
+build

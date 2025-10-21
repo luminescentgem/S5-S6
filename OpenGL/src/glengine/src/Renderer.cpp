@@ -1,38 +1,27 @@
 #include <iostream>
 
+#include <glengine/ObjLoader.hpp>
 #include <glengine/orbitalCamera.hpp>
-#include "glengine/Renderer.hpp"
+#include <glengine/Renderer.hpp>
+#include <glengine/Logger.hpp>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+//#define DrawLines
 
-void* shift(int n) { return (void*)(n*sizeof(float)); }
+static void* shift(int n) { return (void*)(n*sizeof(float)); }
 
-void attrib(int loc, int size, GLsizei stride, int nshift) {
+static void attrib(int loc, int size, GLsizei stride, int nshift) {
     glVertexAttribPointer(loc, size, GL_FLOAT, GL_FALSE, stride, shift(nshift));
     glEnableVertexAttribArray(loc);
 }
 
-std::vector<float> generateNormalLines(ObjectMesh& mesh)
-{
-    std::vector<float> normalLines;
-    normalLines.reserve(mesh.vertices.size() * 2 * 3);
-    float scale = 0.1f;
-
-    for (const auto& v : mesh.vertices) {
-        glm::vec3 p = v.pos;
-        glm::vec3 n = glm::normalize(v.normal);
-        glm::vec3 q = p + n * scale;
-
-        normalLines.insert(normalLines.end(), {p.x,p.y,p.z, q.x,q.y,q.z});
-    }
-    return normalLines;
-}
-
 Renderer::Renderer(ObjMesh& mesh, ShaderMap& shaderPaths)
+    : lastX(0), lastY(0)
 {
     // ------------------------------- DATA ------------------------------- //
 
@@ -62,94 +51,148 @@ Renderer::Renderer(ObjMesh& mesh, ShaderMap& shaderPaths)
     attrib(1, 3, stride, 3);
     attrib(2, 2, stride, 6);
 
-    // ---------------------------- NORMAL LINES -------------------------- //
-
-    normalLines = generateNormalLines(mesh);
-    
-    glGenVertexArrays(1, &vaoN);
-    glGenBuffers(1, &vboN);
-
-    glBindVertexArray(vaoN);
-    glBindBuffer(GL_ARRAY_BUFFER, vboN);
-    glBufferData(GL_ARRAY_BUFFER, normalLines.size()*sizeof(float),
-                                        normalLines.data(), GL_STATIC_DRAW);
-    
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float),(void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindVertexArray(0);
-
     // ------------------------------ SHADERS ----------------------------- //
-    unsigned vertexShader   =
-            handleShader(shaderPaths.at("vertex"), 1, GL_VERTEX_SHADER);
-    unsigned geometryShader   =
-            handleShader(shaderPaths.at("geometry"), 1, GL_GEOMETRY_SHADER);
-    unsigned fragmentShader = 
-            handleShader(shaderPaths.at("fragment"), 1, GL_FRAGMENT_SHADER);
+    unsigned mainVertexShader   =
+            handleShader(shaderPaths.at("main_vertex"), 1, GL_VERTEX_SHADER);
+    unsigned mainFragmentShader = 
+            handleShader(shaderPaths.at("main_fragment"), 1, GL_FRAGMENT_SHADER);
     
-    std::vector<unsigned> shaders = {vertexShader, fragmentShader};
-    mainProgram_ = createProgram(shaders);
-    lineProgram_ = createProgram(geometryShader)
+    std::vector<unsigned> mainShaders = {
+        mainVertexShader,
+        mainFragmentShader
+    };
+    mainProgram_ = createProgram(mainShaders);
+    
+    unsigned lineVertexShader =
+        handleShader(shaderPaths.at("line_vertex"), 1, GL_VERTEX_SHADER);
+    unsigned lineGeometryShader =
+        handleShader(shaderPaths.at("line_geometry"), 1, GL_GEOMETRY_SHADER);
+    unsigned lineFragmentShader =
+        handleShader(shaderPaths.at("line_fragment"), 1, GL_FRAGMENT_SHADER);
+
+    std::vector<unsigned> lineShaders = {
+        lineVertexShader,
+        lineGeometryShader, 
+        lineFragmentShader
+    };
+    lineProgram_ = createProgram(lineShaders);
 }
 
 Renderer::~Renderer()
 {
     if (vbo_) glDeleteBuffers(1, &vbo_);
+    if (ebo_) glDeleteBuffers(1, &ebo_);
     if (vao_) glDeleteVertexArrays(1, &vao_);
     if (mainProgram_) glDeleteProgram(mainProgram_);
+    if (lineProgram_) glDeleteProgram(lineProgram_);
 }
 
 void Renderer::draw()
 {
     // Data
+    Logger::log("Renderer::draw - Initializing Data");
+    
     glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, -0.4f, 0.0f));
     glm::mat4 view  = camera_.getViewMatrix();
     glm::mat4 proj  = glm::perspective(camera_.getFov(),
                                        src_width / (float)src_height,
                                        near_plane, far_plane);
     glm::mat4 mvp   = proj * view * model;
     glm::mat3 uNormalMatrix = glm::transpose(glm::inverse(glm::mat3(model)));
+    glm::vec3 uCameraPos = camera_.getPosition();
 
-    int mvpLoc = glGetUniformLocation(mainProgram_, "uMVP");
+    glm::vec3 lightDir = -glm::vec3(1.6, -1.8, 1.8);
+    glm::vec3 lightA = glm::vec3(0.2);
+    glm::vec3 lightD = glm::vec3(0.5, 0.5, 0.7);
+    glm::vec3 lightS = glm::vec3(0.5);
 
-
+    #ifdef DrawLines
     // Line program
-    glUseProgram(lineProgram);
+    {
+        Logger::log("Renderer::draw - Setting up line program");
 
-    glUniformMatrix4fv(uMVP, 1, GL_FALSE, glm::value_ptr(mvp));
-    glBindVertexArray(vaoN);
-    
-    glLineWidth(1.0f);                 // optional
-    glDrawArrays(GL_LINES, 0, (GLsizei)(normalLines.size()/3));
+        glUseProgram(lineProgram_);
 
-    glBindVertexArray(0);
+        int mvpLoc = glGetUniformLocation(lineProgram_, "uMVP");
+        int modelLoc = glGetUniformLocation(lineProgram_, "model");
+        int viewLoc = glGetUniformLocation(lineProgram_, "view");
+        int projLoc = glGetUniformLocation(lineProgram_, "proj");
+        int lineLengthLoc = glGetUniformLocation(lineProgram_, "normalLength");
 
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+
+        glUniform1f(lineLengthLoc, 0.1);
+
+        glLineWidth(0.3f);          // optional
+
+        glBindVertexArray(vao_);
+
+        Logger::log("Renderer::draw - Using line program");
+        glDrawElements(GL_TRIANGLES, mesh_size, GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(0);
+    }
+    #endif
     // Main program
-    glUseProgram(mainProgram_);
+    {
+        Logger::log("Renderer::draw - Setting up main program");
 
-    glBindVertexArray(vao_);
+        glUseProgram(mainProgram_);
 
-    glDrawElements(GL_TRIANGLES, mesh_size, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
+        glUniformMatrix4fv(glGetUniformLocation(mainProgram_, "uMVP"),
+                    1, GL_FALSE, glm::value_ptr(mvp));
+        glUniformMatrix4fv(glGetUniformLocation(mainProgram_, "uModel"),
+                    1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(mainProgram_, "uView"),
+                    1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix3fv(glGetUniformLocation(mainProgram_, "uNormalMatrix"),
+                    1, GL_FALSE, glm::value_ptr(uNormalMatrix));
+        glUniform3fv(glGetUniformLocation(mainProgram_, "uCameraPos"),
+                    1, glm::value_ptr(uCameraPos));
+        glUniform3fv(glGetUniformLocation(mainProgram_, "uLightDir"),
+                    1, glm::value_ptr(lightDir));
+        glUniform3fv(glGetUniformLocation(mainProgram_, "uA"),
+                    1, glm::value_ptr(lightA));
+        glUniform3fv(glGetUniformLocation(mainProgram_, "uD"),
+                    1, glm::value_ptr(lightD));
+        glUniform3fv(glGetUniformLocation(mainProgram_, "uS"),
+                    1, glm::value_ptr(lightS));
+
+        glBindVertexArray(vao_);
+
+        Logger::log("Renderer::draw - Using main program");
+        glDrawElements(GL_TRIANGLES, mesh_size, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+    Logger::log("Renderer::draw - End");
+    Logger::disable();
 }
 
 void Renderer::onMouseButton(int button, int action, int mods)
 {
-  if (1) { ///// !ImGui::GetIO().WantCaptureMouse) {
-    if (action == GLFW_RELEASE) {
-      mouseButtonState = MousePressedButton::NONE;
+    if (1) { ///// !ImGui::GetIO().WantCaptureMouse) {
+        if (action == GLFW_RELEASE) {
+            mouseButtonState = MousePressedButton::NONE;
+        }
+        else {
+            switch (button) {
+               case GLFW_MOUSE_BUTTON_LEFT:
+                   mouseButtonState = MousePressedButton::LEFT;
+                   break;
+               case GLFW_MOUSE_BUTTON_RIGHT:
+                   mouseButtonState = MousePressedButton::RIGHT;
+                   break;
+               case GLFW_MOUSE_BUTTON_MIDDLE:
+                   mouseButtonState = MousePressedButton::MIDDLE;
+                   break;  
+              }
+        }
     }
-    else {
-      switch (button) {
-        case GLFW_MOUSE_BUTTON_LEFT: mouseButtonState = MousePressedButton::LEFT;
-          break;
-        case GLFW_MOUSE_BUTTON_RIGHT: mouseButtonState = MousePressedButton::RIGHT;
-          break;
-        case GLFW_MOUSE_BUTTON_MIDDLE: mouseButtonState = MousePressedButton::MIDDLE;
-          break;  
-      }
-    }
-  }
 }
 
 void Renderer::onMouseMove(double xpos, double ypos)

@@ -1,41 +1,45 @@
-#pragma once
+#ifndef OBJLOADER_HPP
+#define OBJLOADER_HPP
+
+#include <glm/glm.hpp>
 #include <string>
 #include <vector>
-#include <glm/glm.hpp>
+#include <unordered_map>
 
-using namespace std;
-
-struct ObjVertex {
-    glm::vec3 pos{};
-    glm::vec3 normal{};
-    glm::vec2 uv{};
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 uv;
 };
 
 struct ObjMesh {
-    std::vector<ObjVertex> vertices;   // deduplicated vertex buffer
-    std::vector<uint32_t>  indices;    // index buffer (triangles)
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
 
-    // Optional: build interleaved float buffer (pos, normal, uv) for VBOs
+    // Returns interleaved [pos, normal, uv]
     std::vector<float> interleavedPNV() const {
-        std::vector<float> out; out.reserve(vertices.size()*8);
+        std::vector<float> data;
+        data.reserve(vertices.size() * 8);
         for (const auto& v : vertices) {
-            out.push_back(v.pos.x);
-            out.push_back(v.pos.y);
-            out.push_back(v.pos.z);
+            data.push_back(v.pos.x);
+            data.push_back(v.pos.y);
+            data.push_back(v.pos.z);
 
-            out.push_back(v.normal.x);
-            out.push_back(v.normal.y);
-            out.push_back(v.normal.z);
+            data.push_back(v.normal.x);
+            data.push_back(v.normal.y);
+            data.push_back(v.normal.z);
 
-            out.push_back(v.uv.x);
-            out.push_back(v.uv.y);
+            data.push_back(v.uv.x);
+            data.push_back(v.uv.y);
         }
-        return out;
+        return data;
     }
 };
 
 class ObjLoader {
 public:
-    // Throws std::runtime_error on failure.
-    static ObjMesh load(const string& path, bool computeMissingNormals = true);
+    static ObjMesh load(const std::string& path);
+    static void generateNormals(ObjMesh& mesh);
 };
+
+#endif

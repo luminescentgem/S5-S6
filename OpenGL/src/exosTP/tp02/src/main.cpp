@@ -17,15 +17,17 @@ void processInput(GLFWwindow *window)
 }
 
 int main() {
-    Window window(800, 600, "Rectangle!");
+    Window window(1600, 1200, "Rectangle!");
 
     std::string modelPath = full_path("models/dragon2_small.obj");
     ObjMesh mesh = ObjLoader::load(modelPath);
 
     ShaderMap shaderPaths = {
-        {"vertex",      full_path("shaders/basic.vert")},
-        {"geometry",    full_path("shaders/line.geom")},
-        {"fragment",    full_path("shaders/basic.frag")}
+        {"main_vertex",     full_path("shaders/main.vert")},
+        {"main_fragment",   full_path("shaders/npr.frag")},
+        {"line_vertex",     full_path("shaders/line.vert")},
+        {"line_geometry",   full_path("shaders/line.geom")},
+        {"line_fragment",   full_path("shaders/line.frag")}
     };
 
     Renderer renderer(mesh, shaderPaths);
@@ -60,7 +62,7 @@ int main() {
         processInput(window.raw());
 
         // Rendering
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(0.f, 0.3f, 0.8f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         renderer.draw();

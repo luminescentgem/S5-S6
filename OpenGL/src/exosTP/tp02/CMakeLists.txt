@@ -23,9 +23,11 @@ set(HEADER
 )
 
 set(RESOURCE_FILES
-	${PROJECT_SOURCE_DIR}/resources/shaders/vertexShader.vert
-	${PROJECT_SOURCE_DIR}/resources/shaders/fragmentShader.frag
-	# ${PROJECT_SOURCE_DIR}/resources/shaders/lighting.vert
+	${PROJECT_SOURCE_DIR}/resources/shaders/main.vert
+	${PROJECT_SOURCE_DIR}/resources/shaders/blinn_phong.frag
+	${PROJECT_SOURCE_DIR}/resources/shaders/line.vert
+	${PROJECT_SOURCE_DIR}/resources/shaders/line.geom
+	${PROJECT_SOURCE_DIR}/resources/shaders/line.frag
 	# ${PROJECT_SOURCE_DIR}/resources/shaders/lighting.vert
 )
 
