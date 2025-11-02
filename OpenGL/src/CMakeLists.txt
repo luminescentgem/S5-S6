@@ -18,8 +18,15 @@ mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 
 # Configuration du projet
 project(openGLDemo)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-set(CMAKE_CXX_STANDARD "17")
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (MSVC)
+    add_compile_options(/W0)
+else()
+    add_compile_options(-Wfatal-errors -w)
+endif()
 
 
 ## Lib dependency

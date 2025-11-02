@@ -1,3 +1,4 @@
+// BERTOLINI Garice
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -34,6 +35,8 @@ struct Point
     {
         return sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y));
     }
+
+    // Just the distance without the square root (faster)
     double distance2(Point<Number> p) const
     {
         return (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);

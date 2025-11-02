@@ -18,15 +18,17 @@ set(SRC
 	${SRC_DIR}/main.cpp
 )
 
-
 set(HEADER
-	${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/config.hpp.in
-#	${INC_DIR}/${PROJECT_NAME}/myapp.hpp
+	${INC_DIR}/${PROJECT_NAME}/config.hpp.in
 )
 
 set(RESOURCE_FILES
-#	${PROJECT_SOURCE_DIR}/resources/shaders/lighting.frag
-#	${PROJECT_SOURCE_DIR}/resources/shaders/lighting.vert
+	${PROJECT_SOURCE_DIR}/resources/shaders/main.vert
+	${PROJECT_SOURCE_DIR}/resources/shaders/blinn_phong.frag
+	${PROJECT_SOURCE_DIR}/resources/shaders/line.vert
+	${PROJECT_SOURCE_DIR}/resources/shaders/line.geom
+	${PROJECT_SOURCE_DIR}/resources/shaders/line.frag
+	# ${PROJECT_SOURCE_DIR}/resources/shaders/lighting.vert
 )
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/resources" PREFIX "Resources Files" FILES ${RESOURCE_FILES})

@@ -30,6 +30,7 @@ set(HEADER
  	${INC_DIR}/${PROJECT_NAME}/Shader.hpp
  	${INC_DIR}/${PROJECT_NAME}/Window.hpp
  	${INC_DIR}/${PROJECT_NAME}/ObjLoader.hpp
+	${INC_DIR}/${PROJECT_NAME}/Logger.hpp
 )
 
 add_library(${PROJECT_NAME} ${SRC} ${HEADER})

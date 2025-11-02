@@ -1,0 +1,34 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+	"name": "Node.js & TypeScript",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+
+	"remoteUser": "node",
+
+	"workspaceFolder": "/workspace",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+
+
+	"containerEnv": {
+		"NPM_CONFIG_CACHE": "/home/node/.npm-cache",
+		"NPM_CONFIG_PREFIX": "/home/node/.npm-global"
+	},
+	"mounts": [
+		"type=volume,source=${localWorkspaceFolderBasename}-node_modules,target=/workspace/node_modules",
+		"type=volume,source=${localWorkspaceFolderBasename}-npm-cache,target=/home/node/.npm-cache",
+		"type=volume,source=${localWorkspaceFolderBasename}-npm-global,target=/home/node/.npm-global"
+	],
+
+	"postCreateCommand": "npm ci --no-audit --no-fund",
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"username": "node",
+			"uid": "1000",
+			"gid": "1000",
+			"installZsh": false,
+			"upgradePackages": false
+		}
+	}
+}
