@@ -3,8 +3,4 @@ src/glfw*
 src/glm*
 src/imgui*
 src/stbimage
-<<<<<<< HEAD
 build/
-=======
-build
->>>>>>> cd60291129f7d5be53172145c514b7df0f2c8ff5
